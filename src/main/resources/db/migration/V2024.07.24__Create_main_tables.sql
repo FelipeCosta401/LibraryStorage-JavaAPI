@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS customer(
+	id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    cpf CHAR(14) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS book(
+	id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    author VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS reservation(
+	id INT AUTO_INCREMENT PRIMARY KEY,
+    book_id INT NOT NULL,
+    customer_id INT NOT NULL,
+    `date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+    devolution_date TIMESTAMP NOT NULL,
+    CONSTRAINT `fk_customer_reservation` FOREIGN KEY(`customer_id`) REFERENCES customer(`id`),
+    CONSTRAINT `fk_book_reservation` FOREIGN KEY(`book_id`) REFERENCES book(`id`)
+);
