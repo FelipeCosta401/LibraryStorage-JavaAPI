@@ -12,6 +12,7 @@ public interface IReservationDTO {
     public Integer getReservationId();
     public Timestamp getReservationDate();
     public Timestamp getReservationDevolutionDate();
+    public Integer getWasReservationFinished();
 
     //Book's responses
     public String getBookName();
@@ -26,6 +27,7 @@ public interface IReservationDTO {
                 .id(this.getReservationId())
                 .date(this.getReservationDate())
                 .devolutionDate(this.getReservationDevolutionDate())
+                .wasFinished(this.getWasReservationFinished())
                 .book(BookDTO.builder()
                         .name(this.getBookName())
                         .author(this.getBookAuthor())

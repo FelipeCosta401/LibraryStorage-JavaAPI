@@ -17,6 +17,7 @@ public class ReservationDTO {
     private Integer id;
     private Timestamp date;
     private Timestamp devolutionDate;
+    private Integer wasFinished;
     private BookDTO book;
     private CustomerDTO customer;
 }

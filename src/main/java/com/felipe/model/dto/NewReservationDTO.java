@@ -2,8 +2,6 @@ package com.felipe.model.dto;
 
 import lombok.*;
 
-import java.sql.Timestamp;
-
 @Builder
 @Setter
 @Getter
@@ -12,6 +10,4 @@ import java.sql.Timestamp;
 public class NewReservationDTO {
     private Integer bookId;
     private Integer customerId;
-    private Timestamp date;
-    private Timestamp devolutionDate;
 }

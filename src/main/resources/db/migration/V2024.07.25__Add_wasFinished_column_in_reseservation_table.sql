@@ -1,0 +1,2 @@
+ALTER TABLE reservation
+ADD COLUMN was_finished TINYINT NOT NULL DEFAULT FALSE;

@@ -28,4 +28,7 @@ public class Reservation {
 
     @Column(name = "devolution_date", nullable = false)
     private Timestamp devolutionDate;
+
+    @Column(name = "was_finished", nullable = false)
+    private Integer wasFinished;
 }

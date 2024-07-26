@@ -1,9 +1,12 @@
 package com.felipe.controller;
 
+import com.felipe.interfaces.IReservationDTO;
 import com.felipe.model.dto.NewReservationDTO;
 import com.felipe.model.dto.ReservationDTO;
 import com.felipe.model.entity.Reservation;
 import com.felipe.service.ReservationService;
+import com.felipe.service.exception.BookAlreadyRentedException;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,14 +32,24 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.OK).body(reservationFound);
     }
 
+    @GetMapping("/isRented/{id}")
+    public ResponseEntity<Boolean> isBookRented(@PathVariable Integer id){
+        return ResponseEntity.status(HttpStatus.OK).body(service.isRented(id));
+    }
+
     @PostMapping
     public ResponseEntity<ReservationDTO> newReservation(@RequestBody NewReservationDTO reservation){
-        NewReservationDTO reservationDTO = NewReservationDTO.builder()
-                .bookId(reservation.getBookId())
+        NewReservationDTO newReservationDTO = NewReservationDTO.builder()
                 .customerId(reservation.getCustomerId())
+                .bookId(reservation.getBookId())
                 .build();
-        ReservationDTO createdReservation = service.registerNewReservation(reservationDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdReservation);
+        ReservationDTO createdReservation = service.registerNewReservation(newReservationDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(createdReservation);
+    }
+
+    @PutMapping("/bookDevolution/{id}")
+    public ReservationDTO confirmBookDevolution(@PathVariable Integer id){
+        return service.confirmBookDevolution(id);
     }
 
 }
