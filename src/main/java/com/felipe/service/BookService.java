@@ -20,4 +20,8 @@ public class BookService {
     public List<Book> getAllBooks() {
         return repository.findAll();
     }
+
+    public Boolean bookExists(Integer id){
+        return repository.existsById(id);
+    }
 }

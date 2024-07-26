@@ -6,6 +6,8 @@ import com.felipe.model.dto.ReservationDTO;
 import com.felipe.model.entity.Reservation;
 import com.felipe.repository.ReservationRepository;
 import com.felipe.service.exception.BookAlreadyRentedException;
+import com.felipe.service.exception.CustomerHasOpenReservation;
+import com.felipe.service.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,11 +15,18 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ReservationService {
     @Autowired
     private ReservationRepository repository;
+
+    @Autowired
+    private BookService bookService;
+
+    @Autowired
+    private CustomerService customerService;
 
     public List<ReservationDTO> getAllReservations() {
         List<IReservationDTO> reservationsList = repository.findAllReservations();
@@ -30,61 +39,114 @@ public class ReservationService {
     }
 
     public ReservationDTO getReservationById(Integer id){
-        IReservationDTO iReservation = repository.findReservationById(id);
-        return iReservation.toReservationDTO();
+        //Verifies if reservation exists
+        Boolean reservationExists = repository.existsById(id);
+        if(reservationExists){
+            IReservationDTO iReservation = repository.findReservationById(id);
+            return iReservation.toReservationDTO();
+        }
+        throw new NotFoundException("Reservation not found!");
     }
 
     public ReservationDTO registerNewReservation(NewReservationDTO reservation) {
-        //Verifies if the book is available for rent
-        Boolean isBookAlreadyRented = this.isRented(reservation.getBookId());
-        //If book is available, register the reservation
-        if(!isBookAlreadyRented){
-
-            //Rescue the current day
-            Timestamp currentDay = new Timestamp(System.currentTimeMillis());
-            //Calcs the date before a month from now
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(currentDay);
-            calendar.add(Calendar.MONTH, 1);
-            Timestamp nextMonth = new Timestamp(calendar.getTimeInMillis());
-
-            Reservation newReservation = new Reservation();
-            newReservation.setBookId(reservation.getBookId());
-            newReservation.setCustomerId(reservation.getCustomerId());
-            newReservation.setDate(currentDay);
-            newReservation.setDevolutionDate(nextMonth);
-            newReservation.setWasFinished(0);
-
-            Reservation savedReservation = repository.save(newReservation);
-            Integer reservationId = savedReservation.getId();
-            IReservationDTO iReservationDTO = repository.findReservationById(reservationId);
-            ReservationDTO createdReservation = iReservationDTO.toReservationDTO();
-
-            return createdReservation;
+        //Verifies if book exists
+        Boolean bookExists = this.bookExists(reservation.getBookId());
+        if(bookExists){
+            //Verifies if customer exists
+            Boolean customerExists = customerService.customerExists(reservation.getCustomerId());
+            if(customerExists){
+                //Verifies if the book is available for rent
+                Boolean isBookAlreadyRented = this.isRented(reservation.getBookId());
+                //If book is not available, throw exception
+                if(isBookAlreadyRented){
+                    throw new BookAlreadyRentedException("Book is already rented");
+                } else{
+                    //Verifies if customer is able to make a new reservation
+                    Integer customerId = reservation.getCustomerId();
+                    Integer canCustomerMakeReservation = repository.verifyCustomerStatus(customerId);
+                    if(canCustomerMakeReservation == 1){
+                        return saveNewReservation(reservation);
+                    }else{
+                        throw new CustomerHasOpenReservation("Customer already has an open reservation!");
+                    }
+                }
+            } else{
+             throw new NotFoundException("Customer not found!");
+            }
+        } else{
+            throw new NotFoundException("Book not found!");
         }
-        //If the book is not available, throw exception
-        throw new BookAlreadyRentedException("Book is already rented");
     }
 
     public Boolean isRented(Integer id) {
-        Boolean isThereReservationWithThisBook = repository.existsByBookId(id);
-        if(isThereReservationWithThisBook){
-            Integer wasLastReservationFinished = repository.wasReservationFinished(id);
-            if(wasLastReservationFinished == 1){
+        //Verifies if book exists
+        if(this.bookExists(id)) {
+            //Verifies if exists any reservation with this book
+            Boolean isThereReservationWithThisBook = repository.existsByBookId(id);
+            if (isThereReservationWithThisBook) {
+                //Verifies if the reservation is not done
+                Integer wasLastReservationFinished = repository.wasReservationFinished(id);
+                if (wasLastReservationFinished == 1) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
                 return false;
-            } else{
-                return true;
             }
-        } else{
-            return false;
         }
+        throw new NotFoundException("Book not found!");
     }
 
     public ReservationDTO confirmBookDevolution(Integer id) {
-        Reservation reservationFound = repository.findById(id).get();
-        reservationFound.setWasFinished(1);
-        repository.save(reservationFound);
-        IReservationDTO updatedReservation = repository.findReservationById(id);
-        return updatedReservation.toReservationDTO();
+        //Verifies if reservation exists
+        if(repository.existsById(id)){
+            //Find the reservation
+            Reservation reservationFound = repository.findById(id).get();
+
+            //Set the reservation status to finished
+            reservationFound.setWasFinished(1);
+
+            //Save new reservation status
+            repository.save(reservationFound);
+
+            //Returns new reservationDTO
+            IReservationDTO updatedReservation = repository.findReservationById(id);
+            return updatedReservation.toReservationDTO();
+        }
+        throw new NotFoundException("Reservation not found!");
     }
+
+    private ReservationDTO saveNewReservation(NewReservationDTO reservation){
+        //Rescue the reservation and devolution's date
+        Timestamp currentDay = new Timestamp(System.currentTimeMillis());
+        Timestamp nextMonth = calculateDevolutionDate(currentDay);
+
+        Reservation newReservation = new Reservation();
+        newReservation.setBookId(reservation.getBookId());
+        newReservation.setCustomerId(reservation.getCustomerId());
+        newReservation.setDate(currentDay);
+        newReservation.setDevolutionDate(nextMonth);
+        newReservation.setWasFinished(0);
+
+        repository.save(newReservation);
+        IReservationDTO iReservationDTO = repository.findReservationById(newReservation.getId());
+        return iReservationDTO.toReservationDTO();
+    }
+
+    private Timestamp calculateDevolutionDate(Timestamp reservationDate){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(reservationDate);
+        calendar.add(Calendar.MONTH, 1);
+        return new Timestamp(calendar.getTimeInMillis());
+    }
+
+    private Boolean bookExists(Integer id){
+        if(bookService.bookExists(id))
+            return true;
+        return false;
+    }
+
+
+
 }

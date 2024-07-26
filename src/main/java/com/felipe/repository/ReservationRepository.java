@@ -46,4 +46,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
 
     @Query(value = "SELECT was_finished FROM reservation r WHERE r.book_id = :id ORDER BY `date` DESC LIMIT 1;", nativeQuery = true)
     Integer wasReservationFinished(@PathVariable Integer id);
+
+    @Query(value = "SELECT was_finished \n" +
+            "FROM reservation r\n" +
+            "WHERE r.customer_id = :id\n" +
+            "ORDER BY r.`date`DESC \n" +
+            "LIMIT 1;", nativeQuery = true)
+    Integer verifyCustomerStatus(@Param("id") Integer id);
 }

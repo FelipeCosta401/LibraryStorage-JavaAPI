@@ -53,4 +53,8 @@ public class CustomerService {
         }
         return reservationDTOlist;
     }
+
+    public Boolean customerExists(Integer id){
+        return repository.existsById(id);
+    }
 }
