@@ -20,6 +20,8 @@ public class BookController {
         return ResponseEntity.status(HttpStatus.OK).body(service.getAllBooks());
     }
 
+    @GetMapping("/")
+
     @PostMapping
     public ResponseEntity<Book> registerBook(@RequestBody Book book){
         Book createdBook = service.registerBook(book);

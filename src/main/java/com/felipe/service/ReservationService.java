@@ -11,6 +11,8 @@ import com.felipe.service.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -47,6 +49,25 @@ public class ReservationService {
         }
         throw new NotFoundException("Reservation not found!");
     }
+
+    public List<ReservationDTO> getOpenReservations(){
+        List<IReservationDTO> iReservationList = repository.getOpenReservations();
+        List<ReservationDTO> reservationDTOList = new ArrayList<>();
+        for(IReservationDTO r : iReservationList){
+            reservationDTOList.add(r.toReservationDTO());
+        }
+        return reservationDTOList;
+    }
+
+    public List<ReservationDTO> getReservationByBookId(Integer id){
+        List<IReservationDTO> iReservationDTOList = repository.getReservationByBookId(id);
+        List<ReservationDTO> reservationDTOList = new ArrayList<>();
+        for(IReservationDTO r : iReservationDTOList){
+            reservationDTOList.add(r.toReservationDTO());
+        }
+        return reservationDTOList;
+    }
+
 
     public ReservationDTO registerNewReservation(NewReservationDTO reservation) {
         //Verifies if book exists
@@ -116,6 +137,31 @@ public class ReservationService {
         }
         throw new NotFoundException("Reservation not found!");
     }
+
+    public ReservationDTO postponeReservation(Integer id){
+        //Verifies if reservation exists
+        Boolean reservationExists = repository.existsById(id);
+        if(reservationExists){
+            //verifies if the reservation is not already finished
+            if(repository.isReservationFinished(id) == 1){
+                throw new NotFoundException("No open reservation found with this id!");
+            }
+            //Find the reservation
+            Reservation currentReservation = repository.findById(id).get();
+            //Get the old devolution date and update it through this.calculateDevolutionDate method
+            Timestamp currentDevolutionDate = currentReservation.getDevolutionDate();
+            Timestamp newCurrentDevolutionDate = this.calculateDevolutionDate(currentDevolutionDate);
+            //Set the new devolution date
+            currentReservation.setDevolutionDate(newCurrentDevolutionDate);
+            //Save the new devolution date
+            repository.save(currentReservation);
+            //Returns the updated reservation DTO
+            return this.getReservationById(id);
+        } else{
+            throw new NotFoundException("Reservation not found!");
+        }
+    }
+
 
     private ReservationDTO saveNewReservation(NewReservationDTO reservation){
         //Rescue the reservation and devolution's date

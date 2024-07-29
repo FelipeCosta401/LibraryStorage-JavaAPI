@@ -1,6 +1,7 @@
 package com.felipe.controller;
 
 import com.felipe.interfaces.IReservationDTO;
+import com.felipe.model.dto.BookDTO;
 import com.felipe.model.dto.NewReservationDTO;
 import com.felipe.model.dto.ReservationDTO;
 import com.felipe.model.entity.Reservation;
@@ -32,9 +33,21 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.OK).body(reservationFound);
     }
 
+    @GetMapping("/book/{id}")
+    public ResponseEntity<List<ReservationDTO>> getReservationByBookId(@PathVariable Integer id){
+        List<ReservationDTO> reservationDTOList = service.getReservationByBookId(id);
+        return ResponseEntity.status(HttpStatus.OK).body(reservationDTOList);
+    }
+
+
     @GetMapping("/isRented/{id}")
     public ResponseEntity<Boolean> isBookRented(@PathVariable Integer id){
         return ResponseEntity.status(HttpStatus.OK).body(service.isRented(id));
+    }
+
+    @GetMapping("/open")
+    public ResponseEntity<List<ReservationDTO>> getAllOpenReservations(){
+        return ResponseEntity.status(HttpStatus.OK).body(service.getOpenReservations());
     }
 
     @PostMapping
@@ -46,6 +59,12 @@ public class ReservationController {
         ReservationDTO createdReservation = service.registerNewReservation(newReservationDTO);
         return ResponseEntity.status(HttpStatus.OK).body(createdReservation);
     }
+
+    @PostMapping("/postpone/{id}")
+    public ResponseEntity<ReservationDTO> postponeReservation(@PathVariable Integer id){
+        return ResponseEntity.status(HttpStatus.OK).body(service.postponeReservation(id));
+    }
+
 
     @PutMapping("/bookDevolution/{id}")
     public ReservationDTO confirmBookDevolution(@PathVariable Integer id){

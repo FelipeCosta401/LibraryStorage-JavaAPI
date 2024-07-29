@@ -53,4 +53,40 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
             "ORDER BY r.`date`DESC \n" +
             "LIMIT 1;", nativeQuery = true)
     Integer verifyCustomerStatus(@Param("id") Integer id);
+
+    @Query(value = "SELECT \n" +
+            "\t\tr.id `reservationId`,\n" +
+            "        r.`date` `reservationDate`,\n" +
+            "        r.devolution_date `reservationDevolutionDate`,\n" +
+            "        r.was_finished `wasReservationFinished`,\n" +
+            "        b.`name` `bookName`,\n" +
+            "        b.author `bookAuthor`,\n" +
+            "        c.`name` `customerName`,\n" +
+            "\t\tc.email `customerEmail`\n" +
+            "FROM reservation r \n" +
+            "INNER JOIN book b ON r.book_id = b.id\n" +
+            "INNER JOIN customer c ON r.customer_id = c.id\n" +
+            "WHERE r.was_finished = FALSE\n" +
+            "ORDER BY r.`date` DESC;", nativeQuery = true)
+    List<IReservationDTO> getOpenReservations();
+
+    @Query(value = "SELECT \n" +
+            "\tr.id `reservationId`,\n" +
+            "    r.`date` `reservationDate`,\n" +
+            "\tr.devolution_date `reservationDevolutionDate`,\n" +
+            "    r.was_finished `wasReservationFinished`,\n" +
+            "    b.`name` `bookName`,\n" +
+            "    b.author `bookAuthor`,\n" +
+            "    c.`name` `customerName`,\n" +
+            "    c.email `customerEmail`\n" +
+            "FROM reservation r\n" +
+            "INNER JOIN customer c ON r.customer_id = c.id\n" +
+            "INNER JOIN book b ON r.book_id = b.id\n" +
+            "WHERE b.id = :id;", nativeQuery = true)
+    List<IReservationDTO> getReservationByBookId(@Param("id") Integer id);
+
+    @Query(value = "SELECT was_finished\n" +
+            "FROM reservation r \n" +
+            "WHERE r.id = :id;", nativeQuery = true)
+    Integer isReservationFinished(@Param("id") Integer id);
 }
